@@ -1,9 +1,7 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 
 export const ListContext = createContext();
-
-const DRAFT_KEY = 'electroplumb_material_draft';
 
 const getDefaultClientInfo = () => ({
   client_name: '',
@@ -14,38 +12,121 @@ const getDefaultClientInfo = () => ({
   notes: '',
 });
 
+const getTradeDraftKey = (trade) => {
+  return `electroplumb_draft_${trade || 'electrical'}`;
+};
+
 export const ListProvider = ({ children }) => {
   const [editingId, setEditingId] = useState(null);
-  const [listType, setListType] = useState('electrical'); // 'electrical' | 'plumbing'
+  const [listType, setListTypeState] = useState('electrical'); // 'electrical' | 'plumbing'
   const [clientInfo, setClientInfo] = useState(getDefaultClientInfo());
   const [selectedItems, setSelectedItems] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
+  const [lastAutoSavedAt, setLastAutoSavedAt] = useState(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 
-  // Restore draft on initial load
+  const listTypeRef = useRef(listType);
+  const clientInfoRef = useRef(clientInfo);
+  const selectedItemsRef = useRef(selectedItems);
+  const editingIdRef = useRef(editingId);
+
+  // Keep refs synchronized for immediate access during page/trade transitions
+  useEffect(() => {
+    listTypeRef.current = listType;
+    clientInfoRef.current = clientInfo;
+    selectedItemsRef.current = selectedItems;
+    editingIdRef.current = editingId;
+  }, [listType, clientInfo, selectedItems, editingId]);
+
+  // Helper to persist draft immediately
+  const persistDraft = (trade, data) => {
+    if (!trade) return;
+    const key = getTradeDraftKey(trade);
+    const hasData =
+      (data.selectedItems && data.selectedItems.length > 0) ||
+      (data.clientInfo && data.clientInfo.client_name?.trim()) ||
+      (data.clientInfo && data.clientInfo.project_name?.trim()) ||
+      (data.clientInfo && data.clientInfo.notes?.trim());
+
+    if (hasData) {
+      localStorage.setItem(key, JSON.stringify(data));
+      setLastAutoSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    } else {
+      localStorage.removeItem(key);
+    }
+  };
+
+  // Switch trade and swap in-memory drafts cleanly
+  const switchTrade = (newTrade) => {
+    if (newTrade === listTypeRef.current) return;
+
+    // 1. Auto-save current trade draft before switching
+    if (autoSaveEnabled) {
+      persistDraft(listTypeRef.current, {
+        editingId: editingIdRef.current,
+        list_type: listTypeRef.current,
+        clientInfo: clientInfoRef.current,
+        selectedItems: selectedItemsRef.current,
+      });
+    }
+
+    // 2. Load destination trade's draft
+    const newKey = getTradeDraftKey(newTrade);
+    const saved = localStorage.getItem(newKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setEditingId(parsed.editingId || null);
+        setClientInfo(parsed.clientInfo || getDefaultClientInfo());
+        setSelectedItems(parsed.selectedItems || []);
+      } catch {
+        setEditingId(null);
+        setClientInfo(getDefaultClientInfo());
+        setSelectedItems([]);
+      }
+    } else {
+      setEditingId(null);
+      setClientInfo(getDefaultClientInfo());
+      setSelectedItems([]);
+    }
+
+    setListTypeState(newTrade);
+  };
+
+  const setListType = (trade) => {
+    switchTrade(trade);
+  };
+
+  // Restore initial draft on mount
   useEffect(() => {
     try {
-      const savedDraft = localStorage.getItem(DRAFT_KEY);
-      if (savedDraft) {
-        const parsed = JSON.parse(savedDraft);
+      const initialKey = getTradeDraftKey('electrical');
+      const saved = localStorage.getItem(initialKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
         if (parsed.selectedItems?.length > 0 || parsed.clientInfo?.client_name) {
-          setListType(parsed.list_type || 'electrical');
+          setEditingId(parsed.editingId || null);
           setClientInfo(parsed.clientInfo || getDefaultClientInfo());
           setSelectedItems(parsed.selectedItems || []);
-          setEditingId(parsed.editingId || null);
+          setLastAutoSavedAt('Loaded previous session');
         }
       }
     } catch (e) {
-      console.error('Failed to parse saved draft:', e);
+      console.error('Failed to parse initial draft:', e);
     }
   }, []);
 
-  // Auto-save draft on state change
+  // Continuous auto-save whenever state changes
   useEffect(() => {
+    if (!autoSaveEnabled) return;
+
     const hasData =
       selectedItems.length > 0 ||
       clientInfo.client_name?.trim() ||
       clientInfo.project_name?.trim() ||
       clientInfo.notes?.trim();
+
+    const key = getTradeDraftKey(listType);
 
     if (hasData) {
       const draftData = {
@@ -54,11 +135,29 @@ export const ListProvider = ({ children }) => {
         clientInfo,
         selectedItems,
       };
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+      localStorage.setItem(key, JSON.stringify(draftData));
+      setLastAutoSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } else {
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(key);
     }
-  }, [editingId, listType, clientInfo, selectedItems]);
+  }, [editingId, listType, clientInfo, selectedItems, autoSaveEnabled]);
+
+  // Handle browser tab close or refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (autoSaveEnabled) {
+        persistDraft(listTypeRef.current, {
+          editingId: editingIdRef.current,
+          list_type: listTypeRef.current,
+          clientInfo: clientInfoRef.current,
+          selectedItems: selectedItemsRef.current,
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [autoSaveEnabled]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -107,13 +206,14 @@ export const ListProvider = ({ children }) => {
     setSelectedItems([]);
     setEditingId(null);
     setClientInfo(getDefaultClientInfo());
-    localStorage.removeItem(DRAFT_KEY);
-    showToast('Cleared material list draft');
+    localStorage.removeItem(getTradeDraftKey(listType));
+    setLastAutoSavedAt(null);
+    showToast(`Cleared active ${listType} list`);
   };
 
   const loadListForEdit = (savedList) => {
     setEditingId(savedList.id);
-    setListType(savedList.list_type);
+    setListTypeState(savedList.list_type);
     setClientInfo({
       client_name: savedList.client_name || '',
       client_phone: savedList.client_phone || '',
@@ -172,7 +272,8 @@ export const ListProvider = ({ children }) => {
     setSelectedItems([]);
     setEditingId(null);
     setClientInfo(getDefaultClientInfo());
-    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(getTradeDraftKey(listType));
+    setLastAutoSavedAt(null);
 
     return res.data;
   };
@@ -183,6 +284,7 @@ export const ListProvider = ({ children }) => {
         editingId,
         listType,
         setListType,
+        switchTrade,
         clientInfo,
         setClientInfo,
         selectedItems,
@@ -193,6 +295,9 @@ export const ListProvider = ({ children }) => {
         loadListForEdit,
         saveListToServer,
         toastMessage,
+        lastAutoSavedAt,
+        autoSaveEnabled,
+        setAutoSaveEnabled,
         totalItemsCount: selectedItems.reduce((acc, curr) => acc + curr.quantity, 0),
         totalUniqueItems: selectedItems.length,
       }}

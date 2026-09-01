@@ -19,6 +19,9 @@ const ListDrawer = ({ onSaveSuccess, onShowPreview, onClose }) => {
     saveListToServer,
     totalItemsCount,
     totalUniqueItems,
+    lastAutoSavedAt,
+    autoSaveEnabled,
+    setAutoSaveEnabled,
   } = useContext(ListContext);
 
   const { user } = useContext(AuthContext);
@@ -130,6 +133,52 @@ const ListDrawer = ({ onSaveSuccess, onShowPreview, onClose }) => {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Auto-Save Status Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: 'rgba(15, 23, 42, 0.6)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+        borderRadius: '6px',
+        padding: '0.25rem 0.55rem',
+        marginBottom: '0.75rem',
+        fontSize: '0.72rem',
+        color: '#94a3b8'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: autoSaveEnabled ? '#10b981' : '#64748b',
+            boxShadow: autoSaveEnabled ? '0 0 6px #10b981' : 'none',
+            flexShrink: 0
+          }} />
+          <span>
+            {autoSaveEnabled 
+              ? (lastAutoSavedAt ? `Auto-saved (${lastAutoSavedAt})` : 'Auto-save Active on page switch') 
+              : 'Auto-save Paused'}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: autoSaveEnabled ? '#38bdf8' : '#94a3b8',
+            fontSize: '0.68rem',
+            cursor: 'pointer',
+            padding: 0,
+            textDecoration: 'underline'
+          }}
+        >
+          {autoSaveEnabled ? 'Auto-Save: ON' : 'Turn ON'}
+        </button>
       </div>
 
       {/* Messages */}
