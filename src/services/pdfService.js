@@ -14,10 +14,33 @@ export const generateA4PDF = (listData, userProfile) => {
     if (saved) business = JSON.parse(saved);
   } catch {}
 
-  const businessName = userProfile?.profile?.business_name || business.business_name || 'ElectroPlumb Services';
-  const workerPhone = userProfile?.profile?.phone || business.phone || '+91 98765 43210';
-  const workerEmail = userProfile?.user?.email || business.email || '';
-  const workerAddress = userProfile?.profile?.address || business.address || '';
+  const businessName =
+    listData?.company_name ||
+    userProfile?.profile?.business_name ||
+    userProfile?.business_name ||
+    business.business_name ||
+    'ElectroPlumb Services';
+
+  const technicianName =
+    userProfile?.profile?.technician_name ||
+    business.technician_name ||
+    '';
+
+  const workerPhone =
+    userProfile?.profile?.phone ||
+    business.phone ||
+    '+91 98765 43210';
+
+  const workerEmail =
+    userProfile?.user?.email ||
+    userProfile?.profile?.email ||
+    business.email ||
+    '';
+
+  const workerAddress =
+    userProfile?.profile?.address ||
+    business.address ||
+    '';
 
   const primaryColor = listData.list_type === 'plumbing' ? [13, 148, 136] : [217, 119, 6]; // Teal vs Amber
 
@@ -25,7 +48,7 @@ export const generateA4PDF = (listData, userProfile) => {
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
   doc.rect(0, 0, 210, 36, 'F');
 
-  // Business Name
+  // Company Name
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
@@ -34,7 +57,10 @@ export const generateA4PDF = (listData, userProfile) => {
   // Subtitle / Contact Info
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
-  doc.text(`Phone: ${workerPhone}  ${workerEmail ? '| Email: ' + workerEmail : ''}`, 14, 23);
+  let contactLine = `Phone: ${workerPhone}`;
+  if (workerEmail) contactLine += `  |  Email: ${workerEmail}`;
+  if (technicianName) contactLine += `  |  Contractor: ${technicianName}`;
+  doc.text(contactLine, 14, 23);
   if (workerAddress) {
     doc.text(`Address: ${workerAddress}`, 14, 29);
   }

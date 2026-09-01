@@ -4,16 +4,40 @@ import { downloadPDF, printPDFInNewTab } from '../services/pdfService';
 
 const PDFDocument = ({ listData, userProfile, onClose }) => {
   const isPlumbing = listData?.list_type === 'plumbing';
-  const worker = userProfile || {};
-  const workerName = worker.user?.first_name 
-    ? `${worker.user.first_name} ${worker.user.last_name || ''}`.trim() 
-    : worker.user?.username || 'Electrical & Plumbing Specialist';
-  const businessName = worker.profile?.business_name || `${workerName} Technical Services`;
-  const workerPhone = worker.profile?.phone || 'N/A';
-  const workerEmail = worker.user?.email || '';
-  const workerAddress = [worker.profile?.address, worker.profile?.city, worker.profile?.state, worker.profile?.pin_code]
-    .filter(Boolean)
-    .join(', ');
+
+  let business = {};
+  try {
+    const saved = localStorage.getItem('electroplumb_business_profile');
+    if (saved) business = JSON.parse(saved);
+  } catch {}
+
+  const businessName =
+    listData?.company_name ||
+    userProfile?.profile?.business_name ||
+    userProfile?.business_name ||
+    business.business_name ||
+    'ElectroPlumb Services';
+
+  const technicianName =
+    userProfile?.profile?.technician_name ||
+    business.technician_name ||
+    '';
+
+  const workerPhone =
+    userProfile?.profile?.phone ||
+    business.phone ||
+    '+91 98765 43210';
+
+  const workerEmail =
+    userProfile?.user?.email ||
+    userProfile?.profile?.email ||
+    business.email ||
+    '';
+
+  const workerAddress =
+    userProfile?.profile?.address ||
+    business.address ||
+    '';
 
   const totalQuantity = (listData?.items || []).reduce((acc, curr) => acc + parseInt(curr.quantity || 0, 10), 0);
 
