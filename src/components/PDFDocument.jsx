@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Printer, X } from 'lucide-react';
+import { Download, Printer, X, Eye } from 'lucide-react';
 import { downloadPDF, printPDFInNewTab } from '../services/pdfService';
 
 const PDFDocument = ({ listData, userProfile, onClose }) => {
@@ -39,11 +39,46 @@ const PDFDocument = ({ listData, userProfile, onClose }) => {
     business.address ||
     '';
 
-  const totalQuantity = (listData?.items || []).reduce((acc, curr) => acc + parseInt(curr.quantity || 0, 10), 0);
+  const items = listData?.items || [];
+  const totalQuantity = items.reduce((acc, curr) => acc + parseInt(curr.quantity || 0, 10), 0);
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '900px', width: '100%', background: '#0f172a', padding: '1.25rem' }}>
+    <div 
+      className="modal-overlay" 
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        background: 'rgba(0, 0, 0, 0.85)', 
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        zIndex: 1500, 
+        padding: '1rem',
+        overflowY: 'auto'
+      }}
+      onClick={onClose}
+    >
+      <div 
+        className="modal-content glass-card" 
+        style={{ 
+          maxWidth: '920px', 
+          width: '100%', 
+          background: '#0f172a', 
+          padding: '1.25rem',
+          maxHeight: '92vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Modal Top Actions Bar */}
         <div className="no-print" style={{ 
@@ -52,18 +87,22 @@ const PDFDocument = ({ listData, userProfile, onClose }) => {
           alignItems: 'center', 
           marginBottom: '1rem',
           flexWrap: 'wrap',
-          gap: '0.75rem'
+          gap: '0.75rem',
+          flexShrink: 0
         }}>
-          <div>
-            <h3 style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 800 }}>
-              A4 PDF Material List Preview
-            </h3>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Print-ready formatted document preview
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Eye size={20} color={isPlumbing ? '#2dd4bf' : '#fbbf24'} />
+            <div>
+              <h3 style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+                A4 PDF Material List Preview
+              </h3>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                Official formatted document preview
+              </p>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               onClick={() => downloadPDF(listData, userProfile)}
               className={`btn btn-sm ${isPlumbing ? 'btn-plumb' : 'btn-elec'}`}
@@ -77,16 +116,28 @@ const PDFDocument = ({ listData, userProfile, onClose }) => {
               <Printer size={15} /> Print A4
             </button>
             {onClose && (
-              <button onClick={onClose} className="btn btn-sm btn-outline" style={{ color: '#fff', padding: '0.35rem 0.5rem' }}>
+              <button 
+                onClick={onClose} 
+                className="btn btn-sm btn-outline" 
+                style={{ color: '#fff', padding: '0.35rem 0.6rem', marginLeft: '0.25rem' }}
+                aria-label="Close preview"
+              >
                 <X size={18} />
               </button>
             )}
           </div>
         </div>
 
-        {/* Scrollable container on mobile so the A4 sheet preserves exact proportions */}
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '0.5rem' }}>
-          {/* Crisp A4 Sheet Container */}
+        {/* Scrollable Container with exact A4 Paper Dimensions */}
+        <div style={{ 
+          overflowY: 'auto', 
+          overflowX: 'auto', 
+          WebkitOverflowScrolling: 'touch', 
+          padding: '0.5rem 0',
+          flex: 1,
+          background: '#0b1120',
+          borderRadius: '8px'
+        }}>
           <div
             className="a4-container"
             style={{
@@ -94,9 +145,11 @@ const PDFDocument = ({ listData, userProfile, onClose }) => {
               color: '#0f172a',
               borderRadius: '4px',
               padding: '24mm 20mm',
+              margin: '0 auto',
               boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
               fontFamily: 'Helvetica, Arial, sans-serif',
-              minWidth: '640px',
+              width: '210mm',
+              minWidth: '210mm',
               minHeight: '297mm',
               display: 'flex',
               flexDirection: 'column',
@@ -121,7 +174,7 @@ const PDFDocument = ({ listData, userProfile, onClose }) => {
                     {businessName}
                   </h1>
                   <p style={{ fontSize: '12px', margin: '4px 0 0 0', opacity: 0.9 }}>
-                    Phone: {workerPhone} {workerEmail ? `| Email: ${workerEmail}` : ''}
+                    Phone: {workerPhone} {workerEmail ? `| Email: ${workerEmail}` : ''} {technicianName ? `| Contractor: ${technicianName}` : ''}
                   </p>
                   {workerAddress && (
                     <p style={{ fontSize: '11px', margin: '2px 0 0 0', opacity: 0.85 }}>
@@ -164,110 +217,132 @@ const PDFDocument = ({ listData, userProfile, onClose }) => {
                 fontSize: '13px'
               }}>
                 <div>
-                  <strong style={{ color: '#475569' }}>Client Name: </strong>
-                  <span style={{ color: '#0f172a', fontWeight: '600' }}>{listData?.client_name || 'N/A'}</span>
+                  <div style={{ display: 'flex', marginBottom: '4px' }}>
+                    <strong style={{ color: '#475569', width: '110px' }}>Client Name:</strong>
+                    <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{listData?.client_name || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex', marginBottom: '4px' }}>
+                    <strong style={{ color: '#475569', width: '110px' }}>Phone:</strong>
+                    <span>{listData?.client_phone || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex' }}>
+                    <strong style={{ color: '#475569', width: '110px' }}>Location:</strong>
+                    <span>{listData?.location || 'N/A'}</span>
+                  </div>
                 </div>
+
                 <div>
-                  <strong style={{ color: '#475569' }}>Project / Site: </strong>
-                  <span style={{ color: '#0f172a', fontWeight: '600' }}>{listData?.project_name || 'N/A'}</span>
-                </div>
-                <div>
-                  <strong style={{ color: '#475569' }}>Client Phone: </strong>
-                  <span>{listData?.client_phone || 'N/A'}</span>
-                </div>
-                <div>
-                  <strong style={{ color: '#475569' }}>Date: </strong>
-                  <span>{listData?.date || 'N/A'}</span>
-                </div>
-                <div>
-                  <strong style={{ color: '#475569' }}>Location: </strong>
-                  <span>{listData?.location || 'N/A'}</span>
-                </div>
-                <div>
-                  <strong style={{ color: '#475569' }}>Ref ID: </strong>
-                  <span>{listData?.id ? `#MRL-${listData.id}` : 'DRAFT'}</span>
+                  <div style={{ display: 'flex', marginBottom: '4px' }}>
+                    <strong style={{ color: '#475569', width: '110px' }}>Project / Site:</strong>
+                    <span>{listData?.project_name || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex' }}>
+                    <strong style={{ color: '#475569', width: '110px' }}>Date:</strong>
+                    <span>{listData?.date || new Date().toLocaleDateString('en-GB')}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* 4. Material Table */}
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                fontSize: '13px',
-                marginBottom: '16px'
-              }}>
+              {/* 4. Items Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '16px' }}>
                 <thead>
                   <tr style={{ background: isPlumbing ? '#0d9488' : '#d97706', color: '#ffffff' }}>
-                    <th style={{ padding: '8px 10px', textAlign: 'center', border: '1px solid #cbd5e1', width: '40px' }}>No.</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', border: '1px solid #cbd5e1' }}>Material / Item Description</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', border: '1px solid #cbd5e1', width: '130px' }}>Category</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', border: '1px solid #cbd5e1', width: '80px' }}>Quantity</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'center', border: '1px solid #cbd5e1', width: '70px' }}>Unit</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '40px', border: '1px solid #cbd5e1' }}>#</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', border: '1px solid #cbd5e1' }}>Item Description</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', width: '140px', border: '1px solid #cbd5e1' }}>Category</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right', width: '70px', border: '1px solid #cbd5e1' }}>Qty</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', width: '70px', border: '1px solid #cbd5e1' }}>Unit</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(listData?.items || []).map((item, index) => (
-                    <tr key={index} style={{ background: index % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                      <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{index + 1}</td>
-                      <td style={{ padding: '7px 10px', border: '1px solid #e2e8f0', fontWeight: '600' }}>{item.item_name}</td>
-                      <td style={{ padding: '7px 10px', border: '1px solid #e2e8f0', color: '#64748b' }}>{item.category || 'General'}</td>
-                      <td style={{ padding: '7px 10px', textAlign: 'right', border: '1px solid #e2e8f0', fontWeight: 'bold', color: '#0f172a' }}>{item.quantity}</td>
-                      <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #e2e8f0' }}>{item.unit || 'Piece'}</td>
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                        No items added to this material list yet.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    items.map((item, idx) => (
+                      <tr key={idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #e2e8f0', color: '#64748b' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '7px 10px', fontWeight: 'bold', border: '1px solid #e2e8f0', color: '#1e293b' }}>
+                          {item.item_name}
+                        </td>
+                        <td style={{ padding: '7px 10px', border: '1px solid #e2e8f0', color: '#64748b' }}>
+                          {item.category || 'General'}
+                        </td>
+                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 'bold', border: '1px solid #e2e8f0', color: '#0f172a' }}>
+                          {item.quantity}
+                        </td>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', border: '1px solid #e2e8f0', color: '#475569' }}>
+                          {item.unit}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
 
-              {/* Total Items Banner */}
+              {/* 5. Total Count Summary */}
               <div style={{
-                background: '#f1f5f9',
-                border: '1px solid #cbd5e1',
-                padding: '8px 14px',
-                borderRadius: '4px',
                 display: 'flex',
                 justifyContent: 'space-between',
+                background: '#f1f5f9',
+                padding: '10px 16px',
+                borderRadius: '4px',
                 fontWeight: 'bold',
                 fontSize: '13px',
-                marginBottom: '20px'
+                marginBottom: '16px',
+                border: '1px solid #e2e8f0'
               }}>
-                <span>TOTAL DISTINCT ITEMS: {listData?.items?.length || 0}</span>
+                <span>TOTAL DISTINCT ITEMS: {items.length}</span>
                 <span>TOTAL QUANTITY UNITS: {totalQuantity}</span>
               </div>
 
-              {/* Notes Section */}
+              {/* 6. Notes Box */}
               {listData?.notes && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
-                    ADDITIONAL NOTES & SPECIAL INSTRUCTIONS:
-                  </h4>
-                  <div style={{ background: '#fafafa', border: '1px solid #e2e8f0', padding: '10px 14px', borderRadius: '4px', fontSize: '12px', color: '#334155' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 14px', marginBottom: '20px' }}>
+                  <strong style={{ fontSize: '11px', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                    ADDITIONAL NOTES & INSTRUCTIONS:
+                  </strong>
+                  <p style={{ fontSize: '12px', margin: 0, color: '#1e293b', whiteSpace: 'pre-line' }}>
                     {listData.notes}
-                  </div>
+                  </p>
                 </div>
               )}
             </div>
 
-            {/* 5. Signatures Footer */}
-            <div style={{ paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                <div style={{ width: '220px' }}>
-                  <div style={{ borderBottom: '1px dashed #64748b', height: '30px', marginBottom: '6px' }}></div>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Client Signature</div>
+            {/* 7. Footer & Signatures */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px', paddingTop: '10px' }}>
+                <div style={{ textAlign: 'center', width: '180px' }}>
+                  <div style={{ borderTop: '1px solid #94a3b8', paddingTop: '6px', fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>
+                    Contractor Signature
+                  </div>
                 </div>
 
-                <div style={{ width: '240px', textAlign: 'right' }}>
-                  <div style={{ borderBottom: '1px dashed #64748b', height: '30px', marginBottom: '6px' }}></div>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Worker Signature</div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Prepared by: {workerName}</div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>Contact: {workerPhone}</div>
+                <div style={{ textAlign: 'center', width: '180px' }}>
+                  <div style={{ borderTop: '1px solid #94a3b8', paddingTop: '6px', fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>
+                    Client Approval
+                  </div>
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', fontSize: '10px', color: '#94a3b8', marginTop: '24px' }}>
-                Generated by ElectroPlumb Material Requirement Manager — Official Document
+              <div style={{ borderTop: '1px solid #e2e8f0', marginTop: '20px', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94a3b8' }}>
+                <span>Generated via ElectroPlumb Material Manager</span>
+                <span>Page 1 of 1</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Modal Bottom Close */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.75rem', flexShrink: 0 }}>
+          <button onClick={onClose} className="btn btn-sm btn-outline">
+            Close Preview
+          </button>
         </div>
 
       </div>

@@ -431,12 +431,12 @@ const CreateList = () => {
           <PDFDocument
             listData={{
               list_type: listType,
-              client_name: clientInfo.client_name,
-              client_phone: clientInfo.client_phone,
-              project_name: clientInfo.project_name,
-              location: clientInfo.location,
-              date: clientInfo.date,
-              notes: clientInfo.notes,
+              client_name: clientInfo.client_name?.trim() || 'Client',
+              client_phone: clientInfo.client_phone || '',
+              project_name: clientInfo.project_name || '',
+              location: clientInfo.location || '',
+              date: clientInfo.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }),
+              notes: clientInfo.notes || '',
               items: selectedItems,
             }}
             userProfile={user}
