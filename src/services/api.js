@@ -23,30 +23,14 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh/expiration
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        try {
-          const res = await axios.post(`${API_BASE_URL}/auth/refresh/`, {
-            refresh: refreshToken,
-          });
-          if (res.status === 200) {
-            localStorage.setItem('token', res.data.access);
-            api.defaults.headers.common['Authorization'] = `Bearer ${res.data.access}`;
-            return api(originalRequest);
-          }
-        } catch (refreshError) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
-        }
-      }
+  (error) => {
+    // If token is invalid or expired, gracefully remove it so future requests are not blocked
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
     }
     return Promise.reject(error);
   }

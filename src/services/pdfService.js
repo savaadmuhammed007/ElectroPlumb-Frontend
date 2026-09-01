@@ -8,16 +8,16 @@ export const generateA4PDF = (listData, userProfile) => {
     format: 'a4',
   });
 
-  const worker = userProfile || {};
-  const workerName = worker.user?.first_name 
-    ? `${worker.user.first_name} ${worker.user.last_name || ''}`.trim() 
-    : worker.user?.username || 'Electrical & Plumbing Specialist';
-  const businessName = worker.profile?.business_name || `${workerName} Technical Services`;
-  const workerPhone = worker.profile?.phone || 'N/A';
-  const workerEmail = worker.user?.email || '';
-  const workerAddress = [worker.profile?.address, worker.profile?.city, worker.profile?.state, worker.profile?.pin_code]
-    .filter(Boolean)
-    .join(', ');
+  let business = {};
+  try {
+    const saved = localStorage.getItem('electroplumb_business_profile');
+    if (saved) business = JSON.parse(saved);
+  } catch {}
+
+  const businessName = userProfile?.profile?.business_name || business.business_name || 'ElectroPlumb Services';
+  const workerPhone = userProfile?.profile?.phone || business.phone || '+91 98765 43210';
+  const workerEmail = userProfile?.user?.email || business.email || '';
+  const workerAddress = userProfile?.profile?.address || business.address || '';
 
   const primaryColor = listData.list_type === 'plumbing' ? [13, 148, 136] : [217, 119, 6]; // Teal vs Amber
 

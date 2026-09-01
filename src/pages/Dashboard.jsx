@@ -52,9 +52,8 @@ const Dashboard = () => {
     }
   };
 
-  const workerName = user?.first_name 
-    ? `${user.first_name} ${user.last_name || ''}`.trim() 
-    : user?.username || 'Worker';
+  const { businessProfile } = useContext(AuthContext);
+  const companyTitle = businessProfile?.business_name || 'ElectroPlumb Material Manager';
 
   return (
     <div className="container" style={{ padding: '1.5rem 1rem' }}>
@@ -73,19 +72,19 @@ const Dashboard = () => {
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-            <span className={`badge ${user?.profile?.role === 'plumber' ? 'badge-plumb' : 'badge-elec'}`}>
-              {user?.profile?.role || 'specialist'}
+            <span className="badge badge-elec">
+              Instant Access
             </span>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              {user?.profile?.business_name || 'Licensed Contractor'}
+              {businessProfile?.technician_name || 'Electrical & Plumbing'}
             </span>
           </div>
 
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f8fafc', margin: '0.2rem 0' }}>
-            Welcome, {workerName} 👋
+            {companyTitle}
           </h1>
           <p style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>
-            Select a trade to create and print professional material requirement lists.
+            Select a trade below to create, manage, and print professional A4 material requirement lists.
           </p>
         </div>
 

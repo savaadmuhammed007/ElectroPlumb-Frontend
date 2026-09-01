@@ -1,8 +1,9 @@
-import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
-import { AuthContext } from './AuthContext';
+import React, { createContext, useState, useEffect } from 'react';
 import api from '../services/api';
 
 export const ListContext = createContext();
+
+const DRAFT_KEY = 'electroplumb_material_draft';
 
 const getDefaultClientInfo = () => ({
   client_name: '',
@@ -14,83 +15,32 @@ const getDefaultClientInfo = () => ({
 });
 
 export const ListProvider = ({ children }) => {
-  const { user } = useContext(AuthContext);
   const [editingId, setEditingId] = useState(null);
   const [listType, setListType] = useState('electrical'); // 'electrical' | 'plumbing'
   const [clientInfo, setClientInfo] = useState(getDefaultClientInfo());
   const [selectedItems, setSelectedItems] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Track the previous user ID to handle account switching and logout
-  const currentUserId = user?.id || null;
-  const prevUserIdRef = useRef(currentUserId);
-  const isInitialLoadRef = useRef(true);
-
-  // Helper to get user-scoped draft key in localStorage
-  const getUserDraftKey = (uid) => {
-    return uid ? `electroplumb_draft_user_${uid}` : null;
-  };
-
-  // Clean up any legacy shared draft from older versions
+  // Restore draft on initial load
   useEffect(() => {
     try {
-      localStorage.removeItem('electroplumb_active_draft');
+      const savedDraft = localStorage.getItem(DRAFT_KEY);
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.selectedItems?.length > 0 || parsed.clientInfo?.client_name) {
+          setListType(parsed.list_type || 'electrical');
+          setClientInfo(parsed.clientInfo || getDefaultClientInfo());
+          setSelectedItems(parsed.selectedItems || []);
+          setEditingId(parsed.editingId || null);
+        }
+      }
     } catch (e) {
-      // ignore
+      console.error('Failed to parse saved draft:', e);
     }
   }, []);
 
-  // Handle user login / logout / switch account
+  // Auto-save draft on state change
   useEffect(() => {
-    if (prevUserIdRef.current !== currentUserId || isInitialLoadRef.current) {
-      isInitialLoadRef.current = false;
-      prevUserIdRef.current = currentUserId;
-
-      if (!currentUserId) {
-        // Logged out: completely clear active in-memory list
-        setEditingId(null);
-        setListType('electrical');
-        setClientInfo(getDefaultClientInfo());
-        setSelectedItems([]);
-      } else {
-        // User logged in or switched: load this user's specific draft if exists
-        const userDraftKey = getUserDraftKey(currentUserId);
-        const savedDraft = localStorage.getItem(userDraftKey);
-        if (savedDraft) {
-          try {
-            const parsed = JSON.parse(savedDraft);
-            if (parsed.selectedItems?.length > 0 || parsed.clientInfo?.client_name) {
-              setListType(parsed.list_type || 'electrical');
-              setClientInfo(parsed.clientInfo || getDefaultClientInfo());
-              setSelectedItems(parsed.selectedItems || []);
-              setEditingId(parsed.editingId || null);
-            } else {
-              setEditingId(null);
-              setClientInfo(getDefaultClientInfo());
-              setSelectedItems([]);
-            }
-          } catch (err) {
-            console.error('Error restoring user draft:', err);
-            setEditingId(null);
-            setClientInfo(getDefaultClientInfo());
-            setSelectedItems([]);
-          }
-        } else {
-          // No draft for this user: start clean
-          setEditingId(null);
-          setClientInfo(getDefaultClientInfo());
-          setSelectedItems([]);
-        }
-      }
-    }
-  }, [currentUserId]);
-
-  // Save to user-specific draft on state change (only if logged in)
-  useEffect(() => {
-    if (!currentUserId) return;
-    const userDraftKey = getUserDraftKey(currentUserId);
-    if (!userDraftKey) return;
-
     const hasData =
       selectedItems.length > 0 ||
       clientInfo.client_name?.trim() ||
@@ -104,11 +54,11 @@ export const ListProvider = ({ children }) => {
         clientInfo,
         selectedItems,
       };
-      localStorage.setItem(userDraftKey, JSON.stringify(draftData));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
     } else {
-      localStorage.removeItem(userDraftKey);
+      localStorage.removeItem(DRAFT_KEY);
     }
-  }, [currentUserId, editingId, listType, clientInfo, selectedItems]);
+  }, [editingId, listType, clientInfo, selectedItems]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -157,9 +107,7 @@ export const ListProvider = ({ children }) => {
     setSelectedItems([]);
     setEditingId(null);
     setClientInfo(getDefaultClientInfo());
-    if (currentUserId) {
-      localStorage.removeItem(getUserDraftKey(currentUserId));
-    }
+    localStorage.removeItem(DRAFT_KEY);
     showToast('Cleared material list draft');
   };
 
@@ -220,13 +168,11 @@ export const ListProvider = ({ children }) => {
       showToast('Saved new material list!');
     }
 
-    // Reset list state after saving so it does not linger or contaminate other sessions
+    // Reset list state after saving so it does not linger
     setSelectedItems([]);
     setEditingId(null);
     setClientInfo(getDefaultClientInfo());
-    if (currentUserId) {
-      localStorage.removeItem(getUserDraftKey(currentUserId));
-    }
+    localStorage.removeItem(DRAFT_KEY);
 
     return res.data;
   };
@@ -255,4 +201,5 @@ export const ListProvider = ({ children }) => {
     </ListContext.Provider>
   );
 };
+
 export default ListContext;

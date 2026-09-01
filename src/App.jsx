@@ -6,8 +6,6 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreateList from './pages/CreateList';
 import ElectricalList from './pages/ElectricalList';
@@ -27,94 +25,30 @@ function App() {
             <Navbar />
             <main style={{ flex: 1 }}>
               <Routes>
-                {/* Public Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                {/* Public Fast Access Routes (Zero Auth Required) */}
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/" element={<Dashboard />} />
 
-                {/* Worker Protected Routes */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Electrical List Page */}
+                <Route path="/electrical-list" element={<ElectricalList />} />
+                <Route path="/create-electrical-list" element={<ElectricalList />} />
 
-                {/* Dedicated Electrical List Page */}
-                <Route
-                  path="/electrical-list"
-                  element={
-                    <ProtectedRoute>
-                      <ElectricalList />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/create-electrical-list"
-                  element={
-                    <ProtectedRoute>
-                      <ElectricalList />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Plumbing List Page */}
+                <Route path="/plumbing-list" element={<PlumbingList />} />
+                <Route path="/create-plumbing-list" element={<PlumbingList />} />
 
-                {/* Dedicated Plumbing List Page */}
-                <Route
-                  path="/plumbing-list"
-                  element={
-                    <ProtectedRoute>
-                      <PlumbingList />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/create-plumbing-list"
-                  element={
-                    <ProtectedRoute>
-                      <PlumbingList />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* General Create List */}
+                <Route path="/create-list" element={<CreateList />} />
 
-                {/* General Create List Route */}
-                <Route
-                  path="/create-list"
-                  element={
-                    <ProtectedRoute>
-                      <CreateList />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Saved Lists & Detail */}
+                <Route path="/my-lists" element={<MyLists />} />
+                <Route path="/lists/:id" element={<ListDetail />} />
 
-                <Route
-                  path="/my-lists"
-                  element={
-                    <ProtectedRoute>
-                      <MyLists />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Business Profile & PDF Settings */}
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/settings" element={<Profile />} />
 
-                <Route
-                  path="/lists/:id"
-                  element={
-                    <ProtectedRoute>
-                      <ListDetail />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* Admin Protected Routes */}
+                {/* Admin Only Routes (Protected by Admin PIN: admin123) */}
                 <Route
                   path="/admin"
                   element={
@@ -123,7 +57,6 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-
                 <Route
                   path="/admin/items"
                   element={
@@ -133,9 +66,8 @@ function App() {
                   }
                 />
 
-                {/* Default Redirect */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                {/* Catch-all fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
             <Footer />
