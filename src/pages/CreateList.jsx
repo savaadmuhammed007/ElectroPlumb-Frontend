@@ -5,9 +5,10 @@ import api from '../services/api';
 import ItemCard from '../components/ItemCard';
 import ListDrawer from '../components/ListDrawer';
 import PDFDocument from '../components/PDFDocument';
+import AddItemModal from '../components/AddItemModal';
 import { 
   Zap, Wrench, Search, UserCheck, Calendar, 
-  MapPin, Phone, FileText, ShoppingBag, ChevronRight 
+  MapPin, Phone, FileText, ShoppingBag, ChevronRight, Plus 
 } from 'lucide-react';
 
 const CreateList = () => {
@@ -30,6 +31,7 @@ const CreateList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -282,17 +284,29 @@ const CreateList = () => {
                 </h3>
               </div>
 
-              {/* Search Bar */}
-              <div className="catalog-search-wrap" style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
-                <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search material or code..."
-                  className="form-input"
-                  style={{ paddingLeft: '2.25rem', height: '38px', fontSize: '0.825rem' }}
-                />
+              {/* Search Bar & Add Item Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', width: '100%', maxWidth: '420px', justifyContent: 'flex-end' }}>
+                <div className="catalog-search-wrap" style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
+                  <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search material or code..."
+                    className="form-input"
+                    style={{ paddingLeft: '2.25rem', height: '38px', fontSize: '0.825rem' }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAddItemModal(true)}
+                  className={`btn btn-sm ${isPlumbing ? 'btn-plumb' : 'btn-elec'}`}
+                  style={{ height: '38px', padding: '0 0.85rem', gap: '0.35rem', whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Add Item</span>
+                </button>
               </div>
             </div>
 
@@ -317,8 +331,21 @@ const CreateList = () => {
               </p>
             ) : filteredItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
-                <p style={{ fontWeight: 600, color: '#94a3b8' }}>No materials match your search filter</p>
-                <p style={{ fontSize: '0.78rem', marginTop: '0.2rem' }}>Try adjusting your search keyword or selecting "ALL" categories.</p>
+                <p style={{ fontWeight: 600, color: '#94a3b8' }}>
+                  {searchQuery ? `No materials match "${searchQuery}"` : 'No materials found in this category'}
+                </p>
+                <p style={{ fontSize: '0.78rem', marginTop: '0.2rem', marginBottom: '1rem' }}>
+                  Can't find what you need? Add it directly to your material list.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddItemModal(true)}
+                  className={`btn btn-sm ${isPlumbing ? 'btn-plumb' : 'btn-elec'}`}
+                  style={{ gap: '0.4rem', margin: '0 auto', display: 'inline-flex' }}
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Add "{searchQuery || 'Custom Material'}" as Item</span>
+                </button>
               </div>
             ) : (
               <div className="items-catalog-grid">
@@ -399,23 +426,33 @@ const CreateList = () => {
         </div>
       )}
 
-      {/* PDF Document Preview Modal */}
-      {showPreviewModal && (
-        <PDFDocument
-          listData={{
-            list_type: listType,
-            client_name: clientInfo.client_name,
-            client_phone: clientInfo.client_phone,
-            project_name: clientInfo.project_name,
-            location: clientInfo.location,
-            date: clientInfo.date,
-            notes: clientInfo.notes,
-            items: selectedItems,
-          }}
-          userProfile={user}
-          onClose={() => setShowPreviewModal(false)}
+        {/* PDF Document Preview Modal */}
+        {showPreviewModal && (
+          <PDFDocument
+            listData={{
+              list_type: listType,
+              client_name: clientInfo.client_name,
+              client_phone: clientInfo.client_phone,
+              project_name: clientInfo.project_name,
+              location: clientInfo.location,
+              date: clientInfo.date,
+              notes: clientInfo.notes,
+              items: selectedItems,
+            }}
+            userProfile={user}
+            onClose={() => setShowPreviewModal(false)}
+          />
+        )}
+
+        {/* Add New Item Modal */}
+        <AddItemModal
+          isOpen={showAddItemModal}
+          onClose={() => setShowAddItemModal(false)}
+          defaultType={listType}
+          initialQuery={searchQuery}
+          existingCategories={categories}
+          onItemCreated={() => fetchCatalogItems()}
         />
-      )}
 
       <style>{`
         .create-layout-grid {

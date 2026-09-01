@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { ListContext } from '../context/ListContext';
 import { AuthContext } from '../context/AuthContext';
 import { downloadPDF, printPDFInNewTab } from '../services/pdfService';
+import AddItemModal from './AddItemModal';
 import { 
   ShoppingBag, Trash2, Edit3, Save, Download, 
   Printer, AlertCircle, Plus, Minus, CheckCircle, X 
@@ -24,6 +25,7 @@ const ListDrawer = ({ onSaveSuccess, onShowPreview, onClose }) => {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
 
   const isPlumbing = listType === 'plumbing';
 
@@ -104,7 +106,16 @@ const ListDrawer = ({ onSaveSuccess, onShowPreview, onClose }) => {
           </h3>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={() => setShowAddItemModal(true)}
+            className={`btn btn-sm ${isPlumbing ? 'btn-plumb' : 'btn-elec'}`}
+            style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', gap: '0.25rem' }}
+            title="Add custom item to list"
+          >
+            <Plus size={13} strokeWidth={2.5} /> Custom Item
+          </button>
           <span className={`badge ${isPlumbing ? 'badge-plumb' : 'badge-elec'}`}>
             {totalUniqueItems} items ({totalItemsCount} units)
           </span>
@@ -168,12 +179,20 @@ const ListDrawer = ({ onSaveSuccess, onShowPreview, onClose }) => {
         marginBottom: '1rem' 
       }}>
         {selectedItems.length === 0 ? (
-          <div style={{ textTransform: 'none', textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
+          <div style={{ textTransform: 'none', textAlign: 'center', padding: '2rem 1rem', color: '#64748b' }}>
             <ShoppingBag size={36} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
             <p style={{ fontWeight: 600, fontSize: '0.9rem', color: '#94a3b8' }}>No items added yet</p>
-            <p style={{ fontSize: '0.78rem', marginTop: '0.25rem' }}>
-              Select materials and click <strong>Add</strong> to build requirement list.
+            <p style={{ fontSize: '0.78rem', marginTop: '0.25rem', marginBottom: '0.85rem' }}>
+              Select materials from catalog or add custom materials.
             </p>
+            <button
+              type="button"
+              onClick={() => setShowAddItemModal(true)}
+              className={`btn btn-sm ${isPlumbing ? 'btn-plumb' : 'btn-elec'}`}
+              style={{ gap: '0.35rem', margin: '0 auto', fontSize: '0.78rem' }}
+            >
+              <Plus size={14} strokeWidth={2.5} /> Add Custom Item
+            </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -327,6 +346,13 @@ const ListDrawer = ({ onSaveSuccess, onShowPreview, onClose }) => {
           </button>
         )}
       </div>
+
+      {/* Add Custom Item Modal */}
+      <AddItemModal
+        isOpen={showAddItemModal}
+        onClose={() => setShowAddItemModal(false)}
+        defaultType={listType}
+      />
     </div>
   );
 };
