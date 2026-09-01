@@ -46,7 +46,14 @@ const GoogleSheetSyncModal = ({ items, onClose, onSyncSuccess }) => {
       if (onSyncSuccess) onSyncSuccess();
     } catch (err) {
       console.error('Google Sheet Pull Error:', err);
-      const errMsg = err.response?.data?.error || err.message || 'Failed to pull from Google Sheet.';
+      let errMsg = err.response?.data?.error;
+      if (!errMsg) {
+        if (err.response?.status === 401 || err.message?.includes('401')) {
+          errMsg = "Access Denied by Google (401). Please open your Google Sheet, click 'Share' (top right), change General Access from 'Restricted' to 'Anyone with the link' (Viewer), and try again.";
+        } else {
+          errMsg = err.message || 'Failed to pull from Google Sheet.';
+        }
+      }
       setError(errMsg);
     } finally {
       setLoading(false);
